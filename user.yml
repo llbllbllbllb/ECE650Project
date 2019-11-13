@@ -10,9 +10,9 @@
   student: STUDENT_ID1
   email: email1
 -
-  first: FIRST_NAME2
-  last: LAST_NAME2
-  watiam: WATIAM_ID2
-  student: STUDENT_ID2
-  email: email2
+  first: Zhiming
+  last: Lin
+  watiam: z299lin
+  student: 20835645
+  email: z299lin@uwaterloo.ca
 ...
