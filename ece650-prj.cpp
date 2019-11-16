@@ -5,6 +5,7 @@
 #include <vector>
 #include <algorithm>
 #include <list>
+#include <map>
 
 //ministat
 // defined std::unique_ptr
@@ -239,7 +240,191 @@ void printPath(vector<vertex> vertexList, int startNum, int endNum){
 
 }
 
+vector<int> APPROX_VC_1(vector<int>& dataInt, int vertexNumber){
+    vector<int> res;
+    vector<int> vertexByRate(vertexNumber);
+    vector<int> occurRate(vertexNumber,0);
+    vector<bool> deleted(dataInt.size()/2,false);
 
+    for(auto num:dataInt){
+        occurRate[num]++;
+    }
+    for(int i=0; i<vertexByRate.size();i++){
+        vertexByRate[i] = i;
+    }
+    sort(vertexByRate.begin(), vertexByRate.end(),[&occurRate](size_t i1, size_t i2) {return occurRate[i1] < occurRate[i2];});
+
+
+//    cout<<"vertexByRate: "<<endl;
+//    for(auto num:vertexByRate){
+//        cout<<num<<", ";
+//    }
+//    cout<<endl;
+
+    bool allDone = false;
+    while(!allDone){
+        res.push_back(vertexByRate[vertexByRate.size()-1]);
+//        cout<<"res has push back: "<<vertexByRate[vertexByRate.size()-1]<<endl;
+        for(int i=0; i<dataInt.size(); i+=2){
+            if(dataInt[i] == vertexByRate[vertexByRate.size()-1] || dataInt[i+1] == vertexByRate[vertexByRate.size()-1]){
+                //delete this
+                deleted[i/2] = true;
+            }
+        }
+        vertexByRate.pop_back();
+        if(find(deleted.begin(),deleted.end(),false) == deleted.end()){
+            allDone = true;
+        }
+
+    }
+
+    sort(res.begin(),res.end());
+
+    cout<<"APPROX-VC-1: ";
+    for(int i=0; i<res.size(); i++){
+        if(i != res.size()-1){cout<<res[i]<<",";}
+        else{cout<<res[i];}
+
+    }
+    cout<<endl;
+
+    return res;
+
+    // E {<2,1>,<2,0>,<2,3>,<1,4>,<4,3>}
+
+}
+
+void approxVC2(vector<int> & vertexCoverA2, int & vertexNumber, vector<int>& dataInt)
+{
+    // create the map to store the element of dataInt, make it unvisited
+    vertexCoverA2.clear();
+    map<int, bool> myMap;
+    for (int i = 0; i < dataInt.size(); i++)
+    {
+        myMap[dataInt[i]] = false;
+    }
+
+    for (int i = 0; i < dataInt.size(); i=i+2)
+    {
+        if (myMap[dataInt[i]] == true || myMap[dataInt[i+1]] == true)
+        {
+            continue;
+        }
+        vertexCoverA2.push_back(dataInt[i]);
+        vertexCoverA2.push_back(dataInt[i+1]);
+        myMap[dataInt[i]] = true;
+        myMap[dataInt[i+1]] = true;
+    }
+
+//    cout << "size is " << vertexCoverA2.size() << endl;
+    sort(vertexCoverA2.begin(), vertexCoverA2.end());
+    cout<<"APPROX-VC-2: ";
+    for (int i = 0; i < vertexCoverA2.size(); i++)
+    {
+        if(i != vertexCoverA2.size()-1){cout <<vertexCoverA2[i] <<",";}
+        else{cout <<vertexCoverA2[i];}
+
+    }
+    cout<<endl;
+}
+
+
+void CNF_SAT_VC(vector<int>& dataInt, int vertexNumber){
+    // -- allocate on the heap so that we can reset later if needed
+    std::unique_ptr<Minisat::Solver> solver(new Minisat::Solver());
+
+
+    bool res = false;
+    int n = vertexNumber;
+    int k = 1; // k starts from 1 and ascending
+    while(!res){
+        //create n*k atomic propositions x(i-1,j-1)
+        vector<vector<Minisat::Lit>> litArray;
+        for(int i =0; i<n;i++){
+            vector<Minisat::Lit> tmpVector;
+            for(int j =0; j<k; j++){
+                Minisat::Lit tmp;
+                tmp = Minisat::mkLit(solver->newVar());
+                tmpVector.push_back(tmp);
+            }
+            litArray.push_back(tmpVector);
+        }
+
+        // add clauses
+        // 1. At least one vertex is the ith vertex in the vertex cover
+        for(int m =0;m<k;m++){
+            Minisat::vec<Minisat::Lit> tmp;
+            for(int a=0;a<n;a++){
+                tmp.push(litArray[a][m]);
+            }
+            solver->addClause(tmp);
+        }
+
+        // 2. No one vertex can appear twice in a vertex cover
+        for(int m=0;m<n;m++){
+            for(int q=0;q<k;q++){
+                for(int p=0;p<q;p++){
+                    solver->addClause(~litArray[m][p],~litArray[m][q]);
+                }
+            }
+        }
+
+        // 3. No more than one vertex appears in the mth position of the vertex cover
+        for(int m=0;m<k;m++){
+            for(int q=0;q<n;q++){
+                for(int p=0;p<q;p++){
+                    solver->addClause(~litArray[p][m],~litArray[q][m]);
+                }
+            }
+        }
+
+        // 4. Every edge is incident to at least one vertex in the vertex cover
+        for(int i=0;i<dataInt.size();i+=2){
+            Minisat::vec<Minisat::Lit> tmp;
+            for(int a=0;a<k;a++){
+                tmp.push(litArray[dataInt[i]][a]);
+                tmp.push(litArray[dataInt[i+1]][a]);
+            }
+            solver->addClause(tmp);
+        }
+        res = solver->solve();
+//                std::cout << "The result is: " << res << "\n";
+
+
+        // output corresponding vertex
+        vector<int> vertexOutput;
+        if(res){
+            for(int i =0; i<n;i++){
+                for(int j =0; j<k; j++){
+//                            cout<<"("<<i<<","<<j<<"):"<<Minisat::toInt(solver->modelValue(litArray[i][j]))<<endl;
+                    if(Minisat::toInt(solver->modelValue(litArray[i][j])) == 0){
+
+                        vertexOutput.push_back(i);
+                    }
+                }
+            }
+            sort(vertexOutput.begin(),vertexOutput.end());
+            cout<<"CNF-SAT-VC: ";
+            for(int i=0;i<vertexOutput.size();i++){
+                if(i != vertexOutput.size()-1){
+                    cout<<vertexOutput[i]<<",";
+                }
+                else{
+                    cout<<vertexOutput[i];
+                }
+
+            }
+            cout<<endl;
+        }
+
+
+        solver.reset (new Minisat::Solver());
+
+        k++;
+//                cout<<"current k is: "<<k<<endl;
+    }
+
+}
 
 int main(int argc, char **argv) {
 
@@ -270,97 +455,12 @@ int main(int argc, char **argv) {
         // if dataInt not empty(E input is valid), create adjList
         if(!dataInt.empty()){
 
-            // -- allocate on the heap so that we can reset later if needed
-            std::unique_ptr<Minisat::Solver> solver(new Minisat::Solver());
 
-//            cout<<"Edge List: "<<endl;
-//            for(int i =0; i<dataInt.size();i++){
-//                cout<<dataInt[i]<<",";
-//            }
-//            cout<<endl;
+            CNF_SAT_VC(dataInt,vertexNumber);
+            APPROX_VC_1(dataInt,vertexNumber);
 
-            bool res = false;
-            int n = vertexNumber;
-            int k = 1; // k starts from 1 and ascending
-            while(!res){
-                //create n*k atomic propositions x(i-1,j-1)
-                vector<vector<Minisat::Lit>> litArray;
-                for(int i =0; i<n;i++){
-                    vector<Minisat::Lit> tmpVector;
-                    for(int j =0; j<k; j++){
-                        Minisat::Lit tmp;
-                        tmp = Minisat::mkLit(solver->newVar());
-                        tmpVector.push_back(tmp);
-                    }
-                    litArray.push_back(tmpVector);
-                }
-
-                // add clauses
-                // 1. At least one vertex is the ith vertex in the vertex cover
-                for(int m =0;m<k;m++){
-                    Minisat::vec<Minisat::Lit> tmp;
-                    for(int a=0;a<n;a++){
-                        tmp.push(litArray[a][m]);
-                    }
-                    solver->addClause(tmp);
-                }
-
-                // 2. No one vertex can appear twice in a vertex cover
-                for(int m=0;m<n;m++){
-                    for(int q=0;q<k;q++){
-                        for(int p=0;p<q;p++){
-                            solver->addClause(~litArray[m][p],~litArray[m][q]);
-                        }
-                    }
-                }
-
-                // 3. No more than one vertex appears in the mth position of the vertex cover
-                for(int m=0;m<k;m++){
-                    for(int q=0;q<n;q++){
-                        for(int p=0;p<q;p++){
-                            solver->addClause(~litArray[p][m],~litArray[q][m]);
-                        }
-                    }
-                }
-
-                // 4. Every edge is incident to at least one vertex in the vertex cover
-                for(int i=0;i<dataInt.size();i+=2){
-                    Minisat::vec<Minisat::Lit> tmp;
-                    for(int a=0;a<k;a++){
-                        tmp.push(litArray[dataInt[i]][a]);
-                        tmp.push(litArray[dataInt[i+1]][a]);
-                    }
-                    solver->addClause(tmp);
-                }
-                res = solver->solve();
-//                std::cout << "The result is: " << res << "\n";
-
-
-                // output corresponding vertex
-                vector<int> vertexOutput;
-                if(res){
-                    for(int i =0; i<n;i++){
-                        for(int j =0; j<k; j++){
-//                            cout<<"("<<i<<","<<j<<"):"<<Minisat::toInt(solver->modelValue(litArray[i][j]))<<endl;
-                            if(Minisat::toInt(solver->modelValue(litArray[i][j])) == 0){
-
-                                vertexOutput.push_back(i);
-                            }
-                        }
-                    }
-                    sort(vertexOutput.begin(),vertexOutput.end());
-                    for(int i=0;i<vertexOutput.size();i++){
-                        cout<<vertexOutput[i]<<" ";
-                    }
-                    cout<<endl;
-                }
-
-
-                solver.reset (new Minisat::Solver());
-
-                k++;
-//                cout<<"current k is: "<<k<<endl;
-            }
+            vector<int> vertexCoverA2;
+            approxVC2(vertexCoverA2,vertexNumber,dataInt);
 
 
 
