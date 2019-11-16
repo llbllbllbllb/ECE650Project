@@ -6,16 +6,26 @@
 #include <algorithm>
 #include <list>
 #include <map>
+#include <pthread.h>
+
+// #define NUM_THREADS 4
+#define NUM_THREADS 3
+
 
 //ministat
 // defined std::unique_ptr
 #include <memory>
 // defines Var and Lit
+pthread_mutex_t mutex1 = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t mutex2 = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t mutex3 = PTHREAD_COND_INITIALIZER;
+
 #include "minisat/core/SolverTypes.h"
 // defines Solver
 #include "minisat/core/Solver.h"
 
 using namespace std;
+
 
 class vertex
 {
@@ -239,8 +249,14 @@ void printPath(vector<vertex> vertexList, int startNum, int endNum){
 
 
 }
+// vector<int>& dataInt, int vertexNumber
+void *APPROX_VC_1(void* input){
+    // vector<int> dataInt = ((struct args*)input) -> dataInt;
+    // int vertexNumber = ((struct args*)input) -> vertexNumber;
+    vector<int> dataInt = *(vector <int>*)input;
+    int vertexNumber = dataInt[dataInt.size()-1];
+    dataInt.pop_back();
 
-vector<int> APPROX_VC_1(vector<int>& dataInt, int vertexNumber){
     vector<int> res;
     vector<int> vertexByRate(vertexNumber);
     vector<int> occurRate(vertexNumber,0);
@@ -280,6 +296,7 @@ vector<int> APPROX_VC_1(vector<int>& dataInt, int vertexNumber){
 
     sort(res.begin(),res.end());
 
+    pthread_mutex_lock(&mutex1);
     cout<<"APPROX-VC-1: ";
     for(int i=0; i<res.size(); i++){
         if(i != res.size()-1){cout<<res[i]<<",";}
@@ -287,17 +304,17 @@ vector<int> APPROX_VC_1(vector<int>& dataInt, int vertexNumber){
 
     }
     cout<<endl;
-
-    return res;
-
-    // E {<2,1>,<2,0>,<2,3>,<1,4>,<4,3>}
+    pthread_mutex_unlock(&mutex1);
 
 }
 
-void approxVC2(int & vertexNumber, vector<int>& dataInt)
+void *approxVC2(void* input)
 {
     // create the map to store the element of dataInt, make it unvisited
 //    vertexCoverA2.clear();
+    vector<int> dataInt = *(vector <int>*)input;
+    int vertexNumber = dataInt[dataInt.size()-1];
+    dataInt.pop_back();
     vector<int> vertexCoverA2;
     map<int, bool> myMap;
     for (int i = 0; i < dataInt.size(); i++)
@@ -319,6 +336,7 @@ void approxVC2(int & vertexNumber, vector<int>& dataInt)
 
 //    cout << "size is " << vertexCoverA2.size() << endl;
     sort(vertexCoverA2.begin(), vertexCoverA2.end());
+    pthread_mutex_lock(&mutex2);
     cout<<"APPROX-VC-2: ";
     for (int i = 0; i < vertexCoverA2.size(); i++)
     {
@@ -327,10 +345,13 @@ void approxVC2(int & vertexNumber, vector<int>& dataInt)
 
     }
     cout<<endl;
+    pthread_mutex_unlock(&mutex2);
 }
 
-
-void CNF_SAT_VC(vector<int>& dataInt, int vertexNumber){
+void *CNF_SAT_VC(void* input){
+    vector<int> dataInt = *(vector <int>*)input;
+    int vertexNumber = dataInt[dataInt.size()-1];
+    dataInt.pop_back();
     // -- allocate on the heap so that we can reset later if needed
     std::unique_ptr<Minisat::Solver> solver(new Minisat::Solver());
 
@@ -405,6 +426,7 @@ void CNF_SAT_VC(vector<int>& dataInt, int vertexNumber){
                 }
             }
             sort(vertexOutput.begin(),vertexOutput.end());
+            pthread_mutex_lock(&mutex3);
             cout<<"CNF-SAT-VC: ";
             for(int i=0;i<vertexOutput.size();i++){
                 if(i != vertexOutput.size()-1){
@@ -416,6 +438,7 @@ void CNF_SAT_VC(vector<int>& dataInt, int vertexNumber){
 
             }
             cout<<endl;
+            pthread_mutex_unlock(&mutex3);
         }
 
 
@@ -455,13 +478,28 @@ int main(int argc, char **argv) {
 
         // if dataInt not empty(E input is valid), create adjList
         if(!dataInt.empty()){
+            pthread_t threads[NUM_THREADS];
+            int rc1, rc2, rc3;
 
+            vector<int> newDataInt;
+            newDataInt = dataInt;
+            newDataInt.push_back(vertexNumber);
 
-            CNF_SAT_VC(dataInt,vertexNumber);
-            APPROX_VC_1(dataInt,vertexNumber);
-//            vector<int> vertexCoverA2;
-            approxVC2(vertexNumber,dataInt);
-//            approxVC2(vertexCoverA2, vertexNumber,dataInt);
+              rc1 = pthread_create(&threads[0], NULL, APPROX_VC_1, &newDataInt);
+              rc2 = pthread_create(&threads[1], NULL, approxVC2, &newDataInt);
+              rc3 = pthread_create(&threads[2], NULL, CNF_SAT_VC, &newDataInt);
+
+              if (rc1 || rc2 || rc3)
+              {
+                cerr << "Error: unable to create thread" << endl;
+                exit(-1);
+              }
+
+              pthread_exit(NULL);
+
+            // CNF_SAT_VC(dataInt,vertexNumber);
+            // APPROX_VC_1(dataInt,vertexNumber);
+            // approxVC2(vertexNumber,dataInt);
 
 
 
@@ -503,5 +541,3 @@ int main(int argc, char **argv) {
 
     return 0;
 }
-
-
