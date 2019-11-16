@@ -294,10 +294,11 @@ vector<int> APPROX_VC_1(vector<int>& dataInt, int vertexNumber){
 
 }
 
-void approxVC2(vector<int> & vertexCoverA2, int & vertexNumber, vector<int>& dataInt)
+void approxVC2(int & vertexNumber, vector<int>& dataInt)
 {
     // create the map to store the element of dataInt, make it unvisited
-    vertexCoverA2.clear();
+//    vertexCoverA2.clear();
+    vector<int> vertexCoverA2;
     map<int, bool> myMap;
     for (int i = 0; i < dataInt.size(); i++)
     {
@@ -458,9 +459,9 @@ int main(int argc, char **argv) {
 
             CNF_SAT_VC(dataInt,vertexNumber);
             APPROX_VC_1(dataInt,vertexNumber);
-
-            vector<int> vertexCoverA2;
-            approxVC2(vertexCoverA2,vertexNumber,dataInt);
+//            vector<int> vertexCoverA2;
+            approxVC2(vertexNumber,dataInt);
+//            approxVC2(vertexCoverA2, vertexNumber,dataInt);
 
 
 
