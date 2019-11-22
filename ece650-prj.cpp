@@ -276,9 +276,9 @@ void *IO(void*) {
     cout << ss3;
     cout << ss;
     cout << ss2;
-    cout<<"CNF_SAT_VC_time: "<<CNF_SAT_VC_time * 1e6<<endl;
-    cout<<"APPROX_VC_1_time: "<<APPROX_VC_1_time * 1e6<<endl;
-    cout<<"approxVC2_time: "<<approxVC2_time * 1e6<<endl;
+    cout<<"CNF_SAT_VC_time: "<<CNF_SAT_VC_time<<endl;
+    cout<<"APPROX_VC_1_time: "<<APPROX_VC_1_time<<endl;
+    cout<<"approxVC2_time: "<<approxVC2_time<<endl;
     CNF_SAT_VC_time, APPROX_VC_1_time, approxVC2_time;
 }
 
