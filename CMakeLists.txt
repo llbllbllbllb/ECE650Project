@@ -12,7 +12,7 @@ endif()
 ## Project specific configurations go here
 
 # enable c++11 support
-set (CMAKE_CXX_FLAGS "-std=c++11 -Wall ${CMAKE_CXX_FLAGS}")
+set (CMAKE_CXX_FLAGS "-std=c++11 -Wall ${CMAKE_CXX_FLAGS} -pthread")
 
 # expose minisat header files
 include_directories(${CMAKE_SOURCE_DIR}/minisat)
