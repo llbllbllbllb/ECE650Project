@@ -7,18 +7,21 @@
 #include <list>
 #include <map>
 #include <pthread.h>
+#include <time.h>
+// mac
+//#include <mach/mach_init.h>
+//#include <mach/thread_act.h>
 
-// #define NUM_THREADS 4
-#define NUM_THREADS 3
+ #define NUM_THREADS 4
 
 
 //ministat
 // defined std::unique_ptr
 #include <memory>
 // defines Var and Lit
-pthread_mutex_t mutex1 = PTHREAD_COND_INITIALIZER;
-pthread_mutex_t mutex2 = PTHREAD_COND_INITIALIZER;
-pthread_mutex_t mutex3 = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t mutex1;
+//pthread_mutex_t mutex2 = PTHREAD_COND_INITIALIZER;
+//pthread_mutex_t mutex3 = PTHREAD_COND_INITIALIZER;
 
 #include "minisat/core/SolverTypes.h"
 // defines Solver
@@ -35,6 +38,9 @@ public:
     int distance;   // -1 for infinity
     int parent; // parent of vertex number, -1 for no parent
 };
+
+string ss,ss2,ss3;
+double CNF_SAT_VC_time, APPROX_VC_1_time, approxVC2_time;
 
 void readCommand(string command, int &vertexNumber, int &startNum, int &endNum, vector<int> &dataInt){
 
@@ -87,39 +93,6 @@ void readCommand(string command, int &vertexNumber, int &startNum, int &endNum, 
 
         }
     }
-    else if (firstLetter == 's'){
-        // check vertex number
-        if(vertexNumber==-1){
-            cout<<"Error: You haven't input number of vertex yet."<<endl;
-        }
-        else{
-            // parse input string
-            string ss;
-            regex re("-?[0-9]+");
-            ss = command.substr(2,ss.size()-1); // remove "s " at the beginning
-
-            sregex_iterator next(ss.begin(), ss.end(), re);
-            sregex_iterator end;
-            vector<int> startEndNumber;
-            while (next != end) {
-                //this while loop extract the integer information and store them sequentially to startEndNumber
-                smatch match = *next;
-                string stringNum = match.str();
-                int extractedNum = stoi(stringNum);
-                startEndNumber.push_back(extractedNum);
-                //need to check if valid: smaller than vertex number
-                next++;
-            }
-            startNum = startEndNumber[0];
-            endNum = startEndNumber[1];
-            if(startNum >= vertexNumber || endNum >= vertexNumber || startNum < 0 || endNum < 0){
-                cout<<"Error: Your start number or end number is invalid"<<endl;
-                startNum = -1;
-                endNum = -1;
-            }
-
-        }
-    }
     else{
         cout<<"Error: Your command is not valid, please input correct command."<<endl;
     }
@@ -155,100 +128,22 @@ void createAdjList(vector<int> dataInt, int vertexNumber, vector<list<int> > &ad
 
 }
 
-void calculateShortestPath(int startNum, int endNum, vector<list<int> > adj_list, vector<vertex> &vertexList, vector<int> existVertex){
-    /* This function calculate the distance and parent of each vertex given the start and end vertex */
+double threadTime(){
+//    mach_port_t thread = mach_thread_self();
+//    mach_msg_type_number_t count = THREAD_BASIC_INFO_COUNT;
+//    thread_basic_info_data_t info;
+//    kern_return_t kr = thread_info(thread, THREAD_BASIC_INFO, (thread_info_t) &info, &count);
+//    if (kr != KERN_SUCCESS || (info.flags & TH_FLAGS_IDLE) != 0)
+//        return 0.0;
+//    return info.user_time.microseconds;
 
-    vertexList.clear(); // first clean the vertex list,
-    //initialize vertexList
-    for(int i = 0; i<existVertex.size(); i++){
-        vertex tmpVertex;
-        tmpVertex.vertexNumber = existVertex[i];
-        tmpVertex.color = 0; // initialize: color is white
-        tmpVertex.parent = -1; // initialize: no parent yet
-        tmpVertex.distance = -1; // initialize: infinite distance
-        vertexList.push_back(tmpVertex);
-    }
-
-    // first change start vertex property:
-    for(int i =0; i<vertexList.size(); i++){
-        if(vertexList[i].vertexNumber == startNum){
-            vertexList[i].color = 1; //change color to gray
-            vertexList[i].distance = 0; //change distance to 0
-            vertexList[i].parent = -1; // change parent to null
-        }
-    }
-
-
-    // create a queue
-    vector<int> queue;
-    queue.push_back(startNum);
-    while(!queue.empty()){
-        int processVertexNum = queue[0];
-
-        queue.erase(queue.begin()); // delete first element
-
-        //get distance of the processVertex
-        int processVerDistance;
-        for(int i = 0; i<vertexList.size(); i++){
-            if(vertexList[i].vertexNumber == processVertexNum){//found process vertex
-                processVerDistance = vertexList[i].distance;
-            }
-        }
-
-        list<int>::iterator it; // declare a iterator for list
-        for(it = adj_list[processVertexNum].begin();it!=adj_list[processVertexNum].end();it++){ // for every vertex in adj_list
-            int adjNum = *it;
-
-            for(int j = 0; j<vertexList.size(); j++){
-                if(vertexList[j].vertexNumber == adjNum){ // found that adj vertex in vertexList
-
-                    if(vertexList[j].color == 0){//check if color is white
-
-                        vertexList[j].color = 1 ;// color is white, change it to gray
-                        vertexList[j].distance = processVerDistance +1;
-                        vertexList[j].parent = processVertexNum;
-
-                        queue.push_back(vertexList[j].vertexNumber);
-
-
-                    }
-                }
-            }
-        }
-        for(int i = 0; i<vertexList.size(); i++){
-            if(vertexList[i].vertexNumber == processVertexNum){
-                vertexList[i].color = 2; // change color to black
-            }
-        }
-
-
-    }
-
+    struct timespec ts;
+    clockid_t cid;
+    pthread_getcpuclockid(pthread_self(), &cid);
+    clock_gettime(cid, &ts);
+    return ts.tv_nsec;
 }
 
-
-void printPath(vector<vertex> vertexList, int startNum, int endNum){
-    if(startNum == endNum){
-        cout<<startNum;
-    }
-        // find endNum vertex and check if its parent is -1(Null)
-    else{
-        for(int i =0; i<vertexList.size();i++){
-            if(vertexList[i].vertexNumber == endNum){//found endNum vertex in the list
-                if(vertexList[i].parent == -1){ //end Num no parent
-                    cout<<"Error: no path from "<<startNum<<" to "<<endNum<<" exists";
-
-                }
-                else{
-                    printPath(vertexList,startNum,vertexList[i].parent);
-                    cout<<"-"<<vertexList[i].vertexNumber;
-                }
-            }
-        }
-    }
-
-
-}
 // vector<int>& dataInt, int vertexNumber
 void *APPROX_VC_1(void* input){
     // vector<int> dataInt = ((struct args*)input) -> dataInt;
@@ -296,15 +191,17 @@ void *APPROX_VC_1(void* input){
 
     sort(res.begin(),res.end());
 
-    pthread_mutex_lock(&mutex1);
-    cout<<"APPROX-VC-1: ";
+    APPROX_VC_1_time = threadTime();
+
+    ss.clear();
+    ss ="APPROX-VC-1: ";
     for(int i=0; i<res.size(); i++){
-        if(i != res.size()-1){cout<<res[i]<<",";}
-        else{cout<<res[i];}
+        if(i != res.size()-1){ss = ss + to_string(res[i]) + ",";}
+        else{ss+=to_string(res[i]);}
 
     }
-    cout<<endl;
-    pthread_mutex_unlock(&mutex1);
+    ss+="\n";
+
 
 }
 
@@ -336,16 +233,30 @@ void *approxVC2(void* input)
 
 //    cout << "size is " << vertexCoverA2.size() << endl;
     sort(vertexCoverA2.begin(), vertexCoverA2.end());
-    pthread_mutex_lock(&mutex2);
-    cout<<"APPROX-VC-2: ";
+
+    approxVC2_time = threadTime();
+
+    ss2.clear();
+    ss2 = "APPROX-VC-2: ";
     for (int i = 0; i < vertexCoverA2.size(); i++)
     {
-        if(i != vertexCoverA2.size()-1){cout <<vertexCoverA2[i] <<",";}
-        else{cout <<vertexCoverA2[i];}
+        if(i != vertexCoverA2.size()-1){ss2 = ss2 + to_string(vertexCoverA2[i]) + ",";}
+        else{ss2 += to_string(vertexCoverA2[i]);}
 
     }
-    cout<<endl;
-    pthread_mutex_unlock(&mutex2);
+    ss2+="\n";
+
+
+}
+
+void *IO(void*) {
+    cout << ss3;
+    cout << ss;
+    cout << ss2;
+    cout<<"CNF_SAT_VC_time: "<<CNF_SAT_VC_time * 1e6<<endl;
+    cout<<"APPROX_VC_1_time: "<<APPROX_VC_1_time * 1e6<<endl;
+    cout<<"approxVC2_time: "<<approxVC2_time * 1e6<<endl;
+    CNF_SAT_VC_time, APPROX_VC_1_time, approxVC2_time;
 }
 
 void *CNF_SAT_VC(void* input){
@@ -426,20 +337,25 @@ void *CNF_SAT_VC(void* input){
                 }
             }
             sort(vertexOutput.begin(),vertexOutput.end());
-            pthread_mutex_lock(&mutex3);
-            cout<<"CNF-SAT-VC: ";
+
+            CNF_SAT_VC_time = threadTime();
+
+            ss3.clear();
+            ss3 = "CNF-SAT-VC: ";
             for(int i=0;i<vertexOutput.size();i++){
                 if(i != vertexOutput.size()-1){
-                    cout<<vertexOutput[i]<<",";
+                    ss3 = ss3+ to_string(vertexOutput[i])+ ",";
                 }
                 else{
-                    cout<<vertexOutput[i];
+                    ss3+=to_string(vertexOutput[i]);
                 }
 
             }
-            cout<<endl;
-            pthread_mutex_unlock(&mutex3);
+            ss3+="\n";
         }
+
+
+
 
 
         solver.reset (new Minisat::Solver());
@@ -450,7 +366,14 @@ void *CNF_SAT_VC(void* input){
 
 }
 
+
+
 int main(int argc, char **argv) {
+
+
+    if(pthread_mutex_init(&mutex1,NULL) != 0){
+        return 1;
+    }
 
     /* in V, store Vertex number */
     int vertexNumber = -1;
@@ -479,15 +402,24 @@ int main(int argc, char **argv) {
         // if dataInt not empty(E input is valid), create adjList
         if(!dataInt.empty()){
             pthread_t threads[NUM_THREADS];
-            int rc1, rc2, rc3;
+            int rc1, rc2, rc3, rcIO;
+
+//            clock time
+            clockid_t cid1;
+            clockid_t cid2;
+            clockid_t cid3;
 
             vector<int> newDataInt;
             newDataInt = dataInt;
             newDataInt.push_back(vertexNumber);
 
+
               rc1 = pthread_create(&threads[0], NULL, APPROX_VC_1, &newDataInt);
               rc2 = pthread_create(&threads[1], NULL, approxVC2, &newDataInt);
               rc3 = pthread_create(&threads[2], NULL, CNF_SAT_VC, &newDataInt);
+
+//              int clockVC = pthread_getcpuclockid(rc1, &cid1);
+
 
               if (rc1 || rc2 || rc3)
               {
@@ -495,7 +427,27 @@ int main(int argc, char **argv) {
                 exit(-1);
               }
 
-              pthread_exit(NULL);
+
+
+              pthread_join(threads[0],NULL);
+              pthread_join(threads[1],NULL);
+              pthread_join(threads[2],NULL);
+
+              rcIO = pthread_create(&threads[3], NULL, IO, NULL);
+
+
+              if (rcIO)
+              {
+                  cerr << "Error: unable to create thread" << endl;
+                  exit(-1);
+              }
+            pthread_join(threads[3], NULL);
+
+
+//              cout<<ss3;
+//              cout<<ss;
+//              cout<<ss2;
+
 
             // CNF_SAT_VC(dataInt,vertexNumber);
             // APPROX_VC_1(dataInt,vertexNumber);
@@ -515,27 +467,6 @@ int main(int argc, char **argv) {
             dataInt.clear();
         }
 
-        if(startNum != -1 && endNum != -1){
-
-            if((find(existVertex.begin(), existVertex.end(), startNum) != existVertex.end()) && (find(existVertex.begin(), existVertex.end(), endNum) != existVertex.end())) {
-                /* both startNum and endNum in existVertex */
-                calculateShortestPath(startNum, endNum, adj_list, vertexList, existVertex);
-                if(startNum == endNum){
-                    cout<<"Error: Your start or end vertex are same";
-                }
-                else{
-                    printPath(vertexList, startNum, endNum);
-                }
-
-                cout<<endl;
-            } else {
-                /* one or both not in existVertex */
-                cout<<"Error: Your start or end vertex does not exist"<<endl;
-            }
-
-            startNum = -1;
-            endNum = -1;
-        }
 
     }
 
