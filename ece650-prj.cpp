@@ -426,15 +426,14 @@ int main(int argc, char **argv) {
                 cerr << "Error: unable to create thread" << endl;
                 exit(-1);
               }
-
+            CNF_SAT_VC_time = threadTime(rc3);
+            APPROX_VC_1_time = threadTime(rc1);
+            approxVC2_time = threadTime(rc2);
               pthread_join(threads[0],NULL);
               pthread_join(threads[1],NULL);
               pthread_join(threads[2],NULL);
 
-            CNF_SAT_VC_time = threadTime(rc3);
 
-            APPROX_VC_1_time = threadTime(rc1);
-            approxVC2_time = threadTime(rc2);
 
 
               rcIO = pthread_create(&threads[3], NULL, IO, NULL);
