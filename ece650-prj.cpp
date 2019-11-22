@@ -128,7 +128,7 @@ void createAdjList(vector<int> dataInt, int vertexNumber, vector<list<int> > &ad
 
 }
 
-double threadTime(){
+double threadTime(int& rc){
 //    mach_port_t thread = mach_thread_self();
 //    mach_msg_type_number_t count = THREAD_BASIC_INFO_COUNT;
 //    thread_basic_info_data_t info;
@@ -139,7 +139,7 @@ double threadTime(){
 
     struct timespec ts;
     clockid_t cid;
-    pthread_getcpuclockid(pthread_self(), &cid);
+    pthread_getcpuclockid(rc, &cid);
     clock_gettime(cid, &ts);
     return ts.tv_nsec;
 }
@@ -191,7 +191,7 @@ void *APPROX_VC_1(void* input){
 
     sort(res.begin(),res.end());
 
-    APPROX_VC_1_time = threadTime();
+//    APPROX_VC_1_time = threadTime();
 
     ss.clear();
     ss ="APPROX-VC-1: ";
@@ -234,7 +234,7 @@ void *approxVC2(void* input)
 //    cout << "size is " << vertexCoverA2.size() << endl;
     sort(vertexCoverA2.begin(), vertexCoverA2.end());
 
-    approxVC2_time = threadTime();
+//    approxVC2_time = threadTime();
 
     ss2.clear();
     ss2 = "APPROX-VC-2: ";
@@ -338,7 +338,7 @@ void *CNF_SAT_VC(void* input){
             }
             sort(vertexOutput.begin(),vertexOutput.end());
 
-            CNF_SAT_VC_time = threadTime();
+//            CNF_SAT_VC_time = threadTime();
 
             ss3.clear();
             ss3 = "CNF-SAT-VC: ";
@@ -427,11 +427,15 @@ int main(int argc, char **argv) {
                 exit(-1);
               }
 
-
-
               pthread_join(threads[0],NULL);
               pthread_join(threads[1],NULL);
               pthread_join(threads[2],NULL);
+
+            CNF_SAT_VC_time = threadTime(rc3);
+
+            APPROX_VC_1_time = threadTime(rc1);
+            approxVC2_time = threadTime(rc2);
+
 
               rcIO = pthread_create(&threads[3], NULL, IO, NULL);
 
