@@ -200,7 +200,6 @@ void *APPROX_VC_1(void* input){
 
 
     // time end
-    pthread_getcpuclockid(pthread_self(), &clock_id);
     struct timespec ts_end;
     clock_gettime(clock_id, &ts_end);
 
@@ -255,7 +254,6 @@ void *approxVC2(void* input)
     sort(vertexCoverA2.begin(), vertexCoverA2.end());
 
     // time end
-    pthread_getcpuclockid(pthread_self(), &clock_id);
     struct timespec ts_end;
     clock_gettime(clock_id, &ts_end);
 
@@ -371,7 +369,6 @@ void *CNF_SAT_VC(void* input){
             sort(vertexOutput.begin(),vertexOutput.end());
 
             // time end
-            pthread_getcpuclockid(pthread_self(), &clock_id);
             struct timespec ts_end;
             clock_gettime(clock_id, &ts_end);
 
