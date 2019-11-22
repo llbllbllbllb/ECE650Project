@@ -128,7 +128,7 @@ void createAdjList(vector<int> dataInt, int vertexNumber, vector<list<int> > &ad
 
 }
 
-double threadTime(int& rc){
+double threadTime(/*int& rc*/){
 //    mach_port_t thread = mach_thread_self();
 //    mach_msg_type_number_t count = THREAD_BASIC_INFO_COUNT;
 //    thread_basic_info_data_t info;
