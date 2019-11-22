@@ -139,7 +139,7 @@ double threadTime(/*int& rc*/){
 
     struct timespec ts;
     clockid_t cid;
-    pthread_getcpuclockid(rc, &cid);
+    pthread_getcpuclockid(pthread_self(), &cid);
     clock_gettime(cid, &ts);
     return ts.tv_nsec;
 }
