@@ -214,7 +214,7 @@ void *APPROX_VC_1(void* input){
     }
     ss+="\n";
 
-return 0;
+return NULL;
 }
 
 void *approxVC2(void* input)
@@ -269,7 +269,7 @@ void *approxVC2(void* input)
     }
     ss2+="\n";
 
-return 0;
+return NULL;
 }
 
 void *IO(void*) {
@@ -397,7 +397,7 @@ void *CNF_SAT_VC(void* input){
         k++;
 //                cout<<"current k is: "<<k<<endl;
     }
-return 0;
+return NULL;
 }
 
 
