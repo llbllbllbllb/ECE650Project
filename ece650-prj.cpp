@@ -257,8 +257,8 @@ void *approxVC2(void* input)
     struct timespec ts_end;
     clock_gettime(clock_id, &ts_end);
 
-    approxVC2_time = ((long double)ts_end.tv_sec*1000000 + (long double)ts_end.tv_nsec/1000.0) - ((long double)ts_start.tv_sec*1000000 + (long double)ts_start.tv_nsec/1000.0);
-
+//    approxVC2_time = ((long double)ts_end.tv_sec*1000000 + (long double)ts_end.tv_nsec/1000.0) - ((long double)ts_start.tv_sec*1000000 + (long double)ts_start.tv_nsec/1000.0);
+    approxVC2_time = ((long double)ts_end.tv_nsec/1000.0) - ((long double)ts_start.tv_nsec/1000.0);
     ss2.clear();
     ss2 = "APPROX-VC-2: ";
     for (int i = 0; i < vertexCoverA2.size(); i++)
