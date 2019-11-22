@@ -40,7 +40,7 @@ public:
 };
 
 string ss,ss2,ss3;
-double CNF_SAT_VC_time, APPROX_VC_1_time, approxVC2_time;
+long double CNF_SAT_VC_time, APPROX_VC_1_time, approxVC2_time;
 
 void readCommand(string command, int &vertexNumber, int &startNum, int &endNum, vector<int> &dataInt){
 
@@ -128,26 +128,33 @@ void createAdjList(vector<int> dataInt, int vertexNumber, vector<list<int> > &ad
 
 }
 
-double threadTime(/*int& rc*/){
-//    mach_port_t thread = mach_thread_self();
-//    mach_msg_type_number_t count = THREAD_BASIC_INFO_COUNT;
-//    thread_basic_info_data_t info;
-//    kern_return_t kr = thread_info(thread, THREAD_BASIC_INFO, (thread_info_t) &info, &count);
-//    if (kr != KERN_SUCCESS || (info.flags & TH_FLAGS_IDLE) != 0)
-//        return 0.0;
-//    return info.user_time.microseconds;
-
-    struct timespec ts;
-    clockid_t cid;
-    pthread_getcpuclockid(pthread_self(), &cid);
-    clock_gettime(cid, &ts);
-    return ts.tv_nsec;
-}
+//double threadTime(/*int& rc*/){
+////    mach_port_t thread = mach_thread_self();
+////    mach_msg_type_number_t count = THREAD_BASIC_INFO_COUNT;
+////    thread_basic_info_data_t info;
+////    kern_return_t kr = thread_info(thread, THREAD_BASIC_INFO, (thread_info_t) &info, &count);
+////    if (kr != KERN_SUCCESS || (info.flags & TH_FLAGS_IDLE) != 0)
+////        return 0.0;
+////    return info.user_time.microseconds;
+//
+//    struct timespec ts;
+//    clockid_t cid;
+//    pthread_getcpuclockid(pthread_self(), &cid);
+//    clock_gettime(cid, &ts);
+//    return ts.tv_nsec;
+//}
 
 // vector<int>& dataInt, int vertexNumber
 void *APPROX_VC_1(void* input){
     // vector<int> dataInt = ((struct args*)input) -> dataInt;
     // int vertexNumber = ((struct args*)input) -> vertexNumber;
+
+    // time start
+    clockid_t clock_id;
+    pthread_getcpuclockid(pthread_self(), &clock_id);
+    struct timespec ts_start;
+    clock_gettime(clock_id, &ts_start);
+
     vector<int> dataInt = *(vector <int>*)input;
     int vertexNumber = dataInt[dataInt.size()-1];
     dataInt.pop_back();
@@ -191,7 +198,14 @@ void *APPROX_VC_1(void* input){
 
     sort(res.begin(),res.end());
 
-    APPROX_VC_1_time = threadTime();
+
+    // time end
+    clockid_t clock_id;
+    pthread_getcpuclockid(pthread_self(), &clock_id);
+    struct timespec ts_end;
+    clock_gettime(clock_id, &ts_end);
+
+    APPROX_VC_1_time  = ((long double)ts_end.tv_sec*1000000 + (long double)ts_end.tv_nsec/1000.0) - ((long double)ts_start.tv_sec*1000000 + (long double)ts_start.tv_nsec/1000.0);
 
     ss.clear();
     ss ="APPROX-VC-1: ";
@@ -209,6 +223,13 @@ void *approxVC2(void* input)
 {
     // create the map to store the element of dataInt, make it unvisited
 //    vertexCoverA2.clear();
+
+    // time start
+    clockid_t clock_id;
+    pthread_getcpuclockid(pthread_self(), &clock_id);
+    struct timespec ts_start;
+    clock_gettime(clock_id, &ts_start);
+
     vector<int> dataInt = *(vector <int>*)input;
     int vertexNumber = dataInt[dataInt.size()-1];
     dataInt.pop_back();
@@ -234,7 +255,13 @@ void *approxVC2(void* input)
 //    cout << "size is " << vertexCoverA2.size() << endl;
     sort(vertexCoverA2.begin(), vertexCoverA2.end());
 
-    approxVC2_time = threadTime();
+    // time end
+    clockid_t clock_id;
+    pthread_getcpuclockid(pthread_self(), &clock_id);
+    struct timespec ts_end;
+    clock_gettime(clock_id, &ts_end);
+
+    approxVC2_time = ((long double)ts_end.tv_sec*1000000 + (long double)ts_end.tv_nsec/1000.0) - ((long double)ts_start.tv_sec*1000000 + (long double)ts_start.tv_nsec/1000.0);
 
     ss2.clear();
     ss2 = "APPROX-VC-2: ";
@@ -260,6 +287,13 @@ void *IO(void*) {
 }
 
 void *CNF_SAT_VC(void* input){
+
+    // time start
+    clockid_t clock_id;
+    pthread_getcpuclockid(pthread_self(), &clock_id);
+    struct timespec ts_start;
+    clock_gettime(clock_id, &ts_start);
+
     vector<int> dataInt = *(vector <int>*)input;
     int vertexNumber = dataInt[dataInt.size()-1];
     dataInt.pop_back();
@@ -338,7 +372,13 @@ void *CNF_SAT_VC(void* input){
             }
             sort(vertexOutput.begin(),vertexOutput.end());
 
-            CNF_SAT_VC_time = threadTime();
+            // time end
+            clockid_t clock_id;
+            pthread_getcpuclockid(pthread_self(), &clock_id);
+            struct timespec ts_end;
+            clock_gettime(clock_id, &ts_end);
+
+            CNF_SAT_VC_time = ((long double)ts_end.tv_sec*1000000 + (long double)ts_end.tv_nsec/1000.0) - ((long double)ts_start.tv_sec*1000000 + (long double)ts_start.tv_nsec/1000.0);
 
             ss3.clear();
             ss3 = "CNF-SAT-VC: ";
