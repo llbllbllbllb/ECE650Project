@@ -452,7 +452,7 @@ int main(int argc, char **argv) {
 
 
     output_file.open ("../output.txt");
-    input_file.open("../input.txt");
+    input_file.open("../input2.txt");
 
 
 
@@ -462,7 +462,10 @@ int main(int argc, char **argv) {
 //        getline(cin,command);
         getline(input_file,command);
 
-        if (std::cin.eof()){
+//        if (std::cin.eof()){
+//            break;
+//        }
+        if (input_file.eof()){
             break;
         }
 
