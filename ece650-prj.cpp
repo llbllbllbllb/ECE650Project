@@ -8,6 +8,7 @@
 #include <map>
 #include <pthread.h>
 #include <time.h>
+#include <fstream>
 // mac
 //#include <mach/mach_init.h>
 //#include <mach/thread_act.h>
@@ -42,6 +43,10 @@ public:
 string ss,ss2,ss3;
 long double CNF_SAT_VC_time, APPROX_VC_1_time, approxVC2_time;
 int CNF_SAT_VC_size,APPROX_VC_1_size,approxVC2_size;
+
+
+ofstream output_file;
+ifstream input_file;
 
 void readCommand(string command, int &vertexNumber, int &startNum, int &endNum, vector<int> &dataInt){
 
@@ -287,6 +292,16 @@ void *IO(void*) {
     cout<<"CNF_SAT_VC_size: "<<CNF_SAT_VC_size<<endl;
     cout<<"APPROX_VC_1_size: "<<APPROX_VC_1_size<<endl;
     cout<<"approxVC2_size: "<<approxVC2_size<<endl;
+    output_file<<CNF_SAT_VC_time<<",";
+    output_file<<APPROX_VC_1_time<<",";
+    output_file<<approxVC2_time<<",";
+    output_file<<CNF_SAT_VC_size<<",";
+    output_file<<APPROX_VC_1_size<<",";
+    output_file<<approxVC2_size<<",";
+    output_file<<endl;
+
+
+
 //    CNF_SAT_VC_size,APPROX_VC_1_size,approxVC2_size;
 
 //    CNF_SAT_VC_time, APPROX_VC_1_time, approxVC2_time;
@@ -436,9 +451,16 @@ int main(int argc, char **argv) {
     vector<vertex> vertexList;
 
 
+    output_file.open ("output.txt");
+    input_file.open("input.txt");
+
+
+
+
     while(true){
         string command;
-        getline(cin,command);
+//        getline(cin,command);
+        getline(input_file,command);
 
         if (std::cin.eof()){
             break;
@@ -519,6 +541,10 @@ int main(int argc, char **argv) {
 
 
     }
+
+    output_file.close();
+    input_file.close();
+
 
     return 0;
 }
