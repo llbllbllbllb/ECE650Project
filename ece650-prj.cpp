@@ -451,8 +451,8 @@ int main(int argc, char **argv) {
     vector<vertex> vertexList;
 
 
-    output_file.open ("output.txt");
-    input_file.open("input.txt");
+    output_file.open ("../output.txt");
+    input_file.open("../input.txt");
 
 
 
