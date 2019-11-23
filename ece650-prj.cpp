@@ -40,7 +40,7 @@ public:
 };
 
 string ss,ss2,ss3;
-long double CNF_SAT_VC_time, APPROX_VC_1_time, approxVC2_time, approxVC2_time1;
+long double CNF_SAT_VC_time, APPROX_VC_1_time, approxVC2_time;
 
 void readCommand(string command, int &vertexNumber, int &startNum, int &endNum, vector<int> &dataInt){
 
@@ -257,9 +257,8 @@ void *approxVC2(void* input)
     struct timespec ts_end;
     clock_gettime(clock_id, &ts_end);
 
-//    approxVC2_time = ((long double)ts_end.tv_sec*1000000 + (long double)ts_end.tv_nsec/1000.0) - ((long double)ts_start.tv_sec*1000000 + (long double)ts_start.tv_nsec/1000.0);
-    approxVC2_time1 = ((long double)ts_end.tv_sec*1000000) - ((long double)ts_start.tv_sec*1000000);
-    approxVC2_time = ((long double)ts_end.tv_nsec/1000.0) - ((long double)ts_start.tv_nsec/1000.0);
+    approxVC2_time = ((long double)ts_end.tv_sec*1000000 + (long double)ts_end.tv_nsec/1000.0) - ((long double)ts_start.tv_sec*1000000 + (long double)ts_start.tv_nsec/1000.0);
+
     ss2.clear();
     ss2 = "APPROX-VC-2: ";
     for (int i = 0; i < vertexCoverA2.size(); i++)
@@ -280,8 +279,7 @@ void *IO(void*) {
     cout<<"CNF_SAT_VC_time: "<<CNF_SAT_VC_time<<endl;
     cout<<"APPROX_VC_1_time: "<<APPROX_VC_1_time<<endl;
     cout<<"approxVC2_time: "<<approxVC2_time<<endl;
-    cout<<"approxVC2_time1: "<<approxVC2_time1<<endl;
-    CNF_SAT_VC_time, APPROX_VC_1_time, approxVC2_time;
+//    CNF_SAT_VC_time, APPROX_VC_1_time, approxVC2_time;
 }
 
 void *CNF_SAT_VC(void* input){
