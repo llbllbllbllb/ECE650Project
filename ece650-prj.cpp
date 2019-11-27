@@ -14,7 +14,7 @@
 //#include <mach/thread_act.h>
 
 #define NUM_THREADS 4
-#define MAX_TIME 5
+#define MAX_TIME 15
 pthread_t threads[NUM_THREADS];
 pthread_t time_id;
 
