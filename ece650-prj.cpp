@@ -13,14 +13,17 @@
 //#include <mach/mach_init.h>
 //#include <mach/thread_act.h>
 
- #define NUM_THREADS 4
+#define NUM_THREADS 4
+#define MAX_TIME 5
+pthread_t threads[NUM_THREADS];
+pthread_t time_id;
 
 
 //ministat
 // defined std::unique_ptr
 #include <memory>
 // defines Var and Lit
-pthread_mutex_t mutex1;
+// pthread_mutex_t mutex1;
 //pthread_mutex_t mutex2 = PTHREAD_COND_INITIALIZER;
 //pthread_mutex_t mutex3 = PTHREAD_COND_INITIALIZER;
 
@@ -41,8 +44,9 @@ public:
 };
 
 string ss,ss2,ss3;
-long double CNF_SAT_VC_time, APPROX_VC_1_time, approxVC2_time;
-int CNF_SAT_VC_size,APPROX_VC_1_size,approxVC2_size;
+// long double CNF_SAT_VC_time, APPROX_VC_1_time, APPROX_VC_2_time;
+int CNF_SAT_VC_size,APPROX_VC_1_size,APPROX_VC_2_size;
+
 
 
 ofstream output_file;
@@ -151,15 +155,32 @@ void createAdjList(vector<int> dataInt, int vertexNumber, vector<list<int> > &ad
 //}
 
 // vector<int>& dataInt, int vertexNumber
+
+// time thread
+void * time_thread(void* input){
+  int count = 0;
+  pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+  pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
+
+  while (MAX_TIME > count){
+    pthread_testcancel();
+    count++;
+    sleep(1);
+  }
+  (*(std::unique_ptr<Minisat::Solver>*) input) -> interrupt();
+  return NULL;
+}
+
+
 void *APPROX_VC_1(void* input){
     // vector<int> dataInt = ((struct args*)input) -> dataInt;
     // int vertexNumber = ((struct args*)input) -> vertexNumber;
 
     // time start
-    clockid_t clock_id;
-    pthread_getcpuclockid(pthread_self(), &clock_id);
-    struct timespec ts_start;
-    clock_gettime(clock_id, &ts_start);
+    // clockid_t clock_id;
+    // pthread_getcpuclockid(pthread_self(), &clock_id);
+    // struct timespec ts_start;
+    // clock_gettime(clock_id, &ts_start);
 
     vector<int> dataInt = *(vector <int>*)input;
     int vertexNumber = dataInt[dataInt.size()-1];
@@ -208,10 +229,10 @@ void *APPROX_VC_1(void* input){
 
 
     // time end
-    struct timespec ts_end;
-    clock_gettime(clock_id, &ts_end);
+    // struct timespec ts_end;
+    // clock_gettime(clock_id, &ts_end);
 
-    APPROX_VC_1_time  = ((long double)ts_end.tv_sec*1000000 + (long double)ts_end.tv_nsec/1000.0) - ((long double)ts_start.tv_sec*1000000 + (long double)ts_start.tv_nsec/1000.0);
+    // APPROX_VC_1_time  = ((long double)ts_end.tv_sec*1000000 + (long double)ts_end.tv_nsec/1000.0) - ((long double)ts_start.tv_sec*1000000 + (long double)ts_start.tv_nsec/1000.0);
 
     ss.clear();
     ss ="APPROX-VC-1: ";
@@ -225,16 +246,16 @@ void *APPROX_VC_1(void* input){
 return NULL;
 }
 
-void *approxVC2(void* input)
+void *APPROX_VC_2(void* input)
 {
     // create the map to store the element of dataInt, make it unvisited
 //    vertexCoverA2.clear();
 
     // time start
-    clockid_t clock_id;
-    pthread_getcpuclockid(pthread_self(), &clock_id);
-    struct timespec ts_start;
-    clock_gettime(clock_id, &ts_start);
+    // clockid_t clock_id;
+    // pthread_getcpuclockid(pthread_self(), &clock_id);
+    // struct timespec ts_start;
+    // clock_gettime(clock_id, &ts_start);
 
     vector<int> dataInt = *(vector <int>*)input;
     int vertexNumber = dataInt[dataInt.size()-1];
@@ -261,13 +282,13 @@ void *approxVC2(void* input)
 //    cout << "size is " << vertexCoverA2.size() << endl;
     sort(vertexCoverA2.begin(), vertexCoverA2.end());
 
-    approxVC2_size = vertexCoverA2.size();
+    APPROX_VC_2_size = vertexCoverA2.size();
 
     // time end
-    struct timespec ts_end;
-    clock_gettime(clock_id, &ts_end);
+    // struct timespec ts_end;
+    // clock_gettime(clock_id, &ts_end);
 
-    approxVC2_time = ((long double)ts_end.tv_sec*1000000 + (long double)ts_end.tv_nsec/1000.0) - ((long double)ts_start.tv_sec*1000000 + (long double)ts_start.tv_nsec/1000.0);
+    // APPROX_VC_2_time = ((long double)ts_end.tv_sec*1000000 + (long double)ts_end.tv_nsec/1000.0) - ((long double)ts_start.tv_sec*1000000 + (long double)ts_start.tv_nsec/1000.0);
 
     ss2.clear();
     ss2 = "APPROX-VC-2: ";
@@ -286,34 +307,45 @@ void *IO(void*) {
     cout << ss3;
     cout << ss;
     cout << ss2;
-    cout<<"CNF_SAT_VC_time: "<<CNF_SAT_VC_time<<endl;
-    cout<<"APPROX_VC_1_time: "<<APPROX_VC_1_time<<endl;
-    cout<<"approxVC2_time: "<<approxVC2_time<<endl;
-    cout<<"CNF_SAT_VC_size: "<<CNF_SAT_VC_size<<endl;
-    cout<<"APPROX_VC_1_size: "<<APPROX_VC_1_size<<endl;
-    cout<<"approxVC2_size: "<<approxVC2_size<<endl;
-    output_file<<CNF_SAT_VC_time<<",";
-    output_file<<APPROX_VC_1_time<<",";
-    output_file<<approxVC2_time<<",";
-    output_file<<CNF_SAT_VC_size<<",";
-    output_file<<APPROX_VC_1_size<<",";
-    output_file<<approxVC2_size<<",";
-    output_file<<endl;
+    return NULL;
+    // cout<<"CNF_SAT_VC_time: "<<CNF_SAT_VC_time<<endl;
+    // cout<<"APPROX_VC_1_time: "<<APPROX_VC_1_time<<endl;
+    // cout<<"APPROX_VC_2_time: "<<APPROX_VC_2_time<<endl;
+    // cout<<"CNF_SAT_VC_size: "<<CNF_SAT_VC_size<<endl;
+    // cout<<"APPROX_VC_1_size: "<<APPROX_VC_1_size<<endl;
+    // cout<<"APPROX_VC_2_size: "<<APPROX_VC_2_size<<endl;
+    // output_file<<CNF_SAT_VC_time<<",";
+    // output_file<<APPROX_VC_1_time<<",";
+    // output_file<<APPROX_VC_2_time<<",";
+    // output_file<<CNF_SAT_VC_size<<",";
+    // output_file<<APPROX_VC_1_size<<",";
+    // output_file<<APPROX_VC_2_size<<",";
+    // output_file<<endl;
 
 
 
-//    CNF_SAT_VC_size,APPROX_VC_1_size,approxVC2_size;
+//    CNF_SAT_VC_size,APPROX_VC_1_size,APPROX_VC_2_size;
 
-//    CNF_SAT_VC_time, APPROX_VC_1_time, approxVC2_time;
+//    CNF_SAT_VC_time, APPROX_VC_1_time, APPROX_VC_2_time;
 }
 
 void *CNF_SAT_VC(void* input){
+    // create time threads
+    // int rcTime = pthread_create(&time_id, NULL, &time_thread, &threads[2]);
+    // if (rcTime)
+    // {
+    //   cerr << "Error: unable to create thread" << endl;
+    //   exit(-1);
+    // }
+    // enable cancellation
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+    // pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
 
     // time start
-    clockid_t clock_id;
-    pthread_getcpuclockid(pthread_self(), &clock_id);
-    struct timespec ts_start;
-    clock_gettime(clock_id, &ts_start);
+    // clockid_t clock_id;
+    // pthread_getcpuclockid(pthread_self(), &clock_id);
+    // struct timespec ts_start;
+    // clock_gettime(clock_id, &ts_start);
 
     vector<int> dataInt = *(vector <int>*)input;
     int vertexNumber = dataInt[dataInt.size()-1];
@@ -321,16 +353,33 @@ void *CNF_SAT_VC(void* input){
     // -- allocate on the heap so that we can reset later if needed
     std::unique_ptr<Minisat::Solver> solver(new Minisat::Solver());
 
+    int rcTime = pthread_create(&time_id, NULL, &time_thread, &solver);
+    if (rcTime)
+    {
+      cerr << "Error: unable to create thread" << endl;
+      exit(-1);
+    }
+
+    Minisat::vec<Minisat::Lit> dummy;
+    Minisat::lbool ret = solver->solveLimited(dummy);
 
     bool res = false;
     int n = vertexNumber;
     int k = 1; // k starts from 1 and ascending
     while(!res){
+        if (ret != Minisat::l_True && ret != Minisat::l_False) {
+          ss3.clear();
+          ss3 = "CNF-SAT-VC: timeout\n";
+          break;
+        }
+
+        // pthread_testcancel();
         //create n*k atomic propositions x(i-1,j-1)
         vector<vector<Minisat::Lit>> litArray;
         for(int i =0; i<n;i++){
             vector<Minisat::Lit> tmpVector;
             for(int j =0; j<k; j++){
+                pthread_testcancel();
                 Minisat::Lit tmp;
                 tmp = Minisat::mkLit(solver->newVar());
                 tmpVector.push_back(tmp);
@@ -343,6 +392,7 @@ void *CNF_SAT_VC(void* input){
         for(int m =0;m<k;m++){
             Minisat::vec<Minisat::Lit> tmp;
             for(int a=0;a<n;a++){
+                // pthread_testcancel();
                 tmp.push(litArray[a][m]);
             }
             solver->addClause(tmp);
@@ -352,6 +402,7 @@ void *CNF_SAT_VC(void* input){
         for(int m=0;m<n;m++){
             for(int q=0;q<k;q++){
                 for(int p=0;p<q;p++){
+                    // pthread_testcancel();
                     solver->addClause(~litArray[m][p],~litArray[m][q]);
                 }
             }
@@ -361,6 +412,7 @@ void *CNF_SAT_VC(void* input){
         for(int m=0;m<k;m++){
             for(int q=0;q<n;q++){
                 for(int p=0;p<q;p++){
+                    // pthread_testcancel();
                     solver->addClause(~litArray[p][m],~litArray[q][m]);
                 }
             }
@@ -370,12 +422,16 @@ void *CNF_SAT_VC(void* input){
         for(int i=0;i<dataInt.size();i+=2){
             Minisat::vec<Minisat::Lit> tmp;
             for(int a=0;a<k;a++){
+                // pthread_testcancel();
                 tmp.push(litArray[dataInt[i]][a]);
                 tmp.push(litArray[dataInt[i+1]][a]);
             }
             solver->addClause(tmp);
         }
+        ret = solver->solveLimited(dummy);
         res = solver->solve();
+
+
 //                std::cout << "The result is: " << res << "\n";
 
 
@@ -397,10 +453,10 @@ void *CNF_SAT_VC(void* input){
 
 
             // time end
-            struct timespec ts_end;
-            clock_gettime(clock_id, &ts_end);
-
-            CNF_SAT_VC_time = ((long double)ts_end.tv_sec*1000000 + (long double)ts_end.tv_nsec/1000.0) - ((long double)ts_start.tv_sec*1000000 + (long double)ts_start.tv_nsec/1000.0);
+            // struct timespec ts_end;
+            // clock_gettime(clock_id, &ts_end);
+            //
+            // CNF_SAT_VC_time = ((long double)ts_end.tv_sec*1000000 + (long double)ts_end.tv_nsec/1000.0) - ((long double)ts_start.tv_sec*1000000 + (long double)ts_start.tv_nsec/1000.0);
 
             ss3.clear();
             ss3 = "CNF-SAT-VC: ";
@@ -416,15 +472,12 @@ void *CNF_SAT_VC(void* input){
             ss3+="\n";
         }
 
-
-
-
-
         solver.reset (new Minisat::Solver());
 
         k++;
 //                cout<<"current k is: "<<k<<endl;
     }
+    pthread_cancel(time_id);
 return NULL;
 }
 
@@ -433,9 +486,9 @@ return NULL;
 int main(int argc, char **argv) {
 
 
-    if(pthread_mutex_init(&mutex1,NULL) != 0){
-        return 1;
-    }
+    // if(pthread_mutex_init(&mutex1,NULL) != 0){
+    //     return 1;
+    // }
 
     /* in V, store Vertex number */
     int vertexNumber = -1;
@@ -451,62 +504,68 @@ int main(int argc, char **argv) {
     vector<vertex> vertexList;
 
 
-    output_file.open ("../output.txt");
-    input_file.open("../input2.txt");
+    // output_file.open ("../output.txt");
+    // input_file.open("../input2.txt");
 
 
 
 
     while(true){
         string command;
-//        getline(cin,command);
-        getline(input_file,command);
+       getline(cin,command);
+        // getline(input_file,command);
 
-//        if (std::cin.eof()){
-//            break;
-//        }
-        if (input_file.eof()){
-            break;
-        }
+       if (std::cin.eof()){
+           break;
+       }
+        // if (input_file.eof()){
+        //     break;
+        // }
 
         readCommand(command, vertexNumber, startNum, endNum, dataInt);
 
         // if dataInt not empty(E input is valid), create adjList
         if(!dataInt.empty()){
-            pthread_t threads[NUM_THREADS];
+            // pthread_t threads[NUM_THREADS];
+            // pthread_t time_id;
+
             int rc1, rc2, rc3, rcIO;
+            void * res;
 
 //            clock time
-            clockid_t cid1;
-            clockid_t cid2;
-            clockid_t cid3;
+            // clockid_t cid1;
+            // clockid_t cid2;
+            // clockid_t cid3;
 
             vector<int> newDataInt;
             newDataInt = dataInt;
             newDataInt.push_back(vertexNumber);
 
+              rc1 = pthread_create(&threads[0], NULL, &APPROX_VC_1, &newDataInt);
+              rc2 = pthread_create(&threads[1], NULL, &APPROX_VC_2, &newDataInt);
+              rc3 = pthread_create(&threads[2], NULL, &CNF_SAT_VC, &newDataInt);
 
-              rc1 = pthread_create(&threads[0], NULL, APPROX_VC_1, &newDataInt);
-              rc2 = pthread_create(&threads[1], NULL, approxVC2, &newDataInt);
-              rc3 = pthread_create(&threads[2], NULL, CNF_SAT_VC, &newDataInt);
-
-//              int clockVC = pthread_getcpuclockid(rc1, &cid1);
-
+              // int count = 0;
+              // while (count < MAX_TIME) {
+              //   count ++;
+              //   sleep(1);
+              //
+              // }
 
               if (rc1 || rc2 || rc3)
+              // if (rc1 || rc2)
               {
                 cerr << "Error: unable to create thread" << endl;
                 exit(-1);
               }
 //            CNF_SAT_VC_time = threadTime(rc3);
 //            APPROX_VC_1_time = threadTime(rc1);
-//            approxVC2_time = threadTime(rc2);
+//            APPROX_VC_2_time = threadTime(rc2);
+
+              pthread_join(threads[2], &res);
               pthread_join(threads[0],NULL);
               pthread_join(threads[1],NULL);
-              pthread_join(threads[2],NULL);
-
-
-
+              pthread_join(time_id,NULL);
 
               rcIO = pthread_create(&threads[3], NULL, IO, NULL);
 
@@ -526,7 +585,7 @@ int main(int argc, char **argv) {
 
             // CNF_SAT_VC(dataInt,vertexNumber);
             // APPROX_VC_1(dataInt,vertexNumber);
-            // approxVC2(vertexNumber,dataInt);
+            // APPROX_VC_2(vertexNumber,dataInt);
 
 
 
@@ -545,8 +604,8 @@ int main(int argc, char **argv) {
 
     }
 
-    output_file.close();
-    input_file.close();
+    // output_file.close();
+    // input_file.close();
 
 
     return 0;
